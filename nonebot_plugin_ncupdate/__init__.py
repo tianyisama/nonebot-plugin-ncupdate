@@ -2,6 +2,7 @@ from nonebot import on_command, get_driver, on
 from nonebot.adapters.onebot.v11 import Bot, Event, MessageSegment
 from nonebot.permission import SUPERUSER
 from nonebot.exception import FinishedException
+from nonebot.plugin import PluginMetadata
 import httpx
 import aiofiles
 import zipfile
@@ -14,6 +15,14 @@ import psutil
 import subprocess
 import time
 import platform
+__plugin_meta__ = PluginMetadata(
+    name="nonebot-plugin-mypower",
+    description="指令更新NapCat",
+    usage="更新nc",
+    type="application",
+    homepage="https://github.com/tianyisama/nonebot-plugin-ncupdate",
+    supported_adapters={"~onebot.v11"},
+)
 driver = get_driver()
 global_config = get_driver().config
 superusers = global_config.superusers

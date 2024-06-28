@@ -1,13 +1,12 @@
-[project]
+[tool.poetry]
 name = "nonebot-plugin-ncupdate"
-version = "0.1.0"
+version = "0.1.1"
 description = "A nonebot plugin for update NapCat"
-authors = [
-    {name = "tianyisama", email = "tianyisama99@gmail.com"},
-]
+authors = ["tianyisama"]
 license = "MIT"
 readme = "README.md"
-
+homepage = "https://github.com/tianyisama"
+repository = "https://github.com/tianyisama/nonebot-plugin-ncupdate"
 [tool.poetry.dependencies]
 python = "^3.8"
 nonebot2 = "^2.0.0rc1"
