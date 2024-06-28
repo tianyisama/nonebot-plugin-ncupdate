@@ -15,7 +15,7 @@ import psutil
 import subprocess
 import time
 __plugin_meta__ = PluginMetadata(
-    name="nonebot-plugin-mypower",
+    name="指令更新NapCat",
     description="指令更新NapCat",
     usage="更新nc",
     type="application",
