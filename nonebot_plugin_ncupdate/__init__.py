@@ -14,7 +14,6 @@ import json
 import psutil
 import subprocess
 import time
-import platform
 __plugin_meta__ = PluginMetadata(
     name="nonebot-plugin-mypower",
     description="指令更新NapCat",
@@ -193,8 +192,6 @@ async def reconnect(bot: Bot):
         return
 
     nonebot.logger.info('检测到连接已断开，将在10s后自动发起重连')
-    type = platform.system().lower()
-    nonebot.logger.info(f"{type}")
     time.sleep(10)
     target_path = os.path.normcase(os.path.normpath(os.path.join(base_path, topfolder)))
 
