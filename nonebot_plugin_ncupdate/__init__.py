@@ -3,6 +3,7 @@ from nonebot.adapters.onebot.v11 import Bot, Event, MessageSegment
 from nonebot.permission import SUPERUSER
 from nonebot.exception import FinishedException
 from nonebot.plugin import PluginMetadata
+from .config import Config, config
 import httpx
 import aiofiles
 import zipfile
@@ -17,24 +18,26 @@ import time
 __plugin_meta__ = PluginMetadata(
     name="指令更新NapCat",
     description="指令更新NapCat",
-    usage="更新nc",
+    usage="""更新nc: 更新napcat并自动重启
+重启nc: 重新启动napcat
+柚子更新nc: 自己作为机器人触发的更新
+柚子重启nc: 自己作为机器人触发的重启""",
     type="application",
     homepage="https://github.com/tianyisama/nonebot-plugin-ncupdate",
+    config=Config,
     supported_adapters={"~onebot.v11"},
 )
 driver = get_driver()
-global_config = get_driver().config
-superusers = global_config.superusers
-config = global_config.dict()
-base_path = config.get('base_path') if config.get('base_path') else "C:\\napcat"
-topfolder = config.get('topfolder') if config.get('topfolder') else "NapCat.win32.x64"
-mode = config.get('napcat_mode', "win")
-nc_proxy = config.get('nc_proxy', False)
-nc_proxy_port = config.get('nc_proxy_port', "11451")
-nc_http_port = config.get('nc_http_port', "3000")
-nc_self_update = config.get('nc_self_update', "柚子更新nc")
-nc_self_restart = config.get('nc_self_restart', "柚子重启nc")
-nc_reconnect = config.get('nc_reconnect', False)
+base_path = config.base_path
+topfolder = config.topfolder
+napcat_mode = config.napcat_mode
+nc_proxy = config.nc_proxy
+nc_proxy_port = config.nc_proxy_port
+nc_http_port = config.nc_http_port
+nc_self_update = config.nc_self_update 
+nc_self_restart = config.nc_self_restart
+nc_reconnect = config.nc_reconnect
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 mode_file = os.path.join(current_dir, 'mode.json')
 update_nc = on_command("更新nc", priority=5, permission=SUPERUSER)
@@ -58,13 +61,13 @@ async def create_client():
     else:
         return httpx.AsyncClient(follow_redirects=True)
 
-async def get_latest_release(mode, version_info):
+async def get_latest_release(napcat_mode, version_info):
     asset_keyword = {
         "win": "win32.x64",
         "win_32": "win32.ia32",
         "linux": "linux.x64",
         "linux_arm": "linux.arm64"
-    }[mode]
+    }[napcat_mode]
     
     async with await create_client() as client:
         resp = await client.get("https://api.github.com/repos/NapNeko/NapCatQQ/releases/latest")
@@ -93,7 +96,7 @@ async def handle_update_nc(bot: Bot, event: Event):
     try:
         version_info = await bot.get_version_info()
         try:
-            asset, latest_version, current_version = await get_latest_release(mode, version_info)
+            asset, latest_version, current_version = await get_latest_release(napcat_mode, version_info)
         except ValueError as e:
             await update_nc.finish(str(e)) 
         
@@ -142,7 +145,6 @@ async def handle_restart(bot: Bot, event: Event):
         await update_nc.send(f"发送重启请求时出错：{http_err}")
     except Exception as e:
         await update_nc.send(f"发送重启请求时出现错误：{str(e)}")
-
 @driver.on_bot_connect
 async def reconnected(bot: Bot):
     version_info = await bot.get_version_info()
