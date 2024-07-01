@@ -7,13 +7,12 @@
 - 新增win系统cmd闪退发起重连（手动关掉cmd也会触发重连请求）
 - 新增断线10s后再发起重连
 ## 说明
-没上传到商店也没有pypi，有需要可以自行下载替换
+~~没上传到商店也没有pypi，有需要可以自行下载替换~~
 
 **目前只支持1.5.2及以上版本**，此前版本没有重启nc端的功能，请手动将版本升级到1.5.2以确保后续版本的自动更新
 
-支持linux，支持自身触发更新或重启 ~~（linux似乎不支持快速重启？）~~，支持选择代理
+支持linux，支持自身触发更新或重启，支持选择代理
 
-~~忘了是不是需要安装依赖了，如果有需要的话你会安装的吧~~需要安装`aiofiles`和`psutil`
 
 **请打开你的napcat的http服务，否则无法重启nc**
 
@@ -93,9 +92,8 @@
 - 必填：否
 
 ### 配置示例
-
 > 只有要用到的才填写，如果用不到或者不知道怎么设置，把你的napcat运行目录变成`C:\napcat\NapCat.win32.x64`就可以了
-
+#### Windows配置示例
 ```ini
 base_path=C:\\
 topfolder=NapCat
@@ -107,10 +105,21 @@ nc_self_update="橘子更新nc"
 nc_self_restart="橘子重启nc"
 nc_reconnect=true
 ```
-
+#### Linux配置示例
+```ini
+base_path=/root
+topfolder=NapCat.linux.x64
+napcat_mode=linux
+nc_proxy=true
+nc_proxy_port=11451
+nc_http_port=3000
+nc_self_update="橘子更新nc"
+nc_self_restart="橘子重启nc"
+nc_reconnect=false
+```
 ## 挖坑
 - 准备实现linux断线重连
-- 准备上传到商店
+- ~~准备上传到商店~~
 
 ## 致谢
 
