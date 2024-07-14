@@ -4,6 +4,9 @@ from nonebot.permission import SUPERUSER
 from nonebot.exception import FinishedException
 from nonebot.plugin import PluginMetadata
 from .config import Config, config
+from .version import is_qq_version_at_least_9_9_12
+from .restart_12 import start_program_async
+from .notice import notice
 import httpx
 import aiofiles
 import zipfile
@@ -15,6 +18,11 @@ import json
 import psutil
 import subprocess
 import time
+import platform
+try:
+    import winreg
+except ImportError:
+    winreg = None
 __plugin_meta__ = PluginMetadata(
     name="指令更新NapCat",
     description="指令更新NapCat",
@@ -44,12 +52,6 @@ update_nc = on_command("更新nc", priority=5, permission=SUPERUSER)
 restart = on_command("重启nc", priority=5, permission=SUPERUSER)
 on_message_sent = on("message_sent", block=False)
 global bot_id
-def load_mode():
-    try:
-        with open(mode_file, 'r') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return
 
 async def create_client():
     if nc_proxy:
@@ -93,6 +95,7 @@ async def download_file(download_url, filename):
 
 @update_nc.handle()
 async def handle_update_nc(bot: Bot, event: Event):
+    global bot_id
     try:
         version_info = await bot.get_version_info()
         try:
@@ -122,8 +125,13 @@ async def handle_update_nc(bot: Bot, event: Event):
                     except OSError:
                         continue
         except:
-            await update_nc.finish("文件替换过程出现错误")    
-        await handle_restart(bot, event)
+            await update_nc.finish("文件替换过程出现错误")
+        version_up = await is_qq_version_at_least_9_9_12()
+        if platform.system().lower() == 'windows' and version_up:
+            value = 1
+            await start_program_async(bot, event, value, bot_id)
+        else:   
+            await handle_restart(bot, event)
 
     except FinishedException:
         pass
@@ -131,20 +139,22 @@ async def handle_update_nc(bot: Bot, event: Event):
         await update_nc.send(f"发生错误：{e}")
 @restart.handle()
 async def handle_restart(bot: Bot, event: Event):
+    global bot_id
     try:
         await restart.send("正在重启，请稍候")
-        mode_data = {"type": "private", "id": event.user_id}
-        if event.message_type == "group":
-            mode_data = {"type": "group", "id": event.group_id}
-        async with aiofiles.open(mode_file, 'w') as f:
-            await f.write(json.dumps(mode_data))
-        async with httpx.AsyncClient(proxies={}) as client:
-            post_resp = await client.post(url=f"http://127.0.0.1:{nc_http_port}/set_restart", data={"delay": 10})
-            post_resp.raise_for_status()
+        await notice(bot, event)
+        version_up = await is_qq_version_at_least_9_9_12()
+        if platform.system().lower() == 'windows' and version_up:
+            value = 1
+            await start_program_async(bot, event, value, bot_id)
+        else:
+            async with httpx.AsyncClient(proxies={}) as client:
+                post_resp = await client.post(url=f"http://127.0.0.1:{nc_http_port}/set_restart", data={"delay": 10})
+                post_resp.raise_for_status()
     except httpx.HTTPStatusError as http_err:
-        await update_nc.send(f"发送重启请求时出错：{http_err}")
+        await restart.send(f"发送重启请求时出错：{http_err}")
     except Exception as e:
-        await update_nc.send(f"发送重启请求时出现错误：{str(e)}")
+        await restart.send(f"发送重启请求时出现错误：{str(e)}")
 @driver.on_bot_connect
 async def reconnected(bot: Bot):
     version_info = await bot.get_version_info()
@@ -172,6 +182,35 @@ async def reconnected(bot: Bot):
     
     global bot_id
     bot_id = nonebot.get_bot().self_id
+async def kill_cmd_process(target_path):
+    found = False
+    for proc in psutil.process_iter(['pid', 'name', 'exe', 'cwd']):
+        if proc.info['name'] == 'cmd.exe':
+            pid = proc.info['pid']
+            cwd = proc.info['cwd']
+            normalized_cwd = os.path.normcase(os.path.normpath(cwd))
+
+            nonebot.logger.info(f'PID: {pid}, CWD: {normalized_cwd}')
+            if normalized_cwd == target_path:
+                proc.kill()
+                nonebot.logger.info(f'Killed process with PID: {pid}')
+                found = True
+                break
+    return found
+
+async def start_script(target_path, bot_id):
+    bat_path = os.path.join(target_path, 'napcat-utf8.bat')
+    command = f'cmd.exe /c start "" "{bat_path}" -q {bot_id}'
+
+    try:
+        process = await asyncio.create_subprocess_shell(
+            command,
+            cwd=target_path
+        )
+        nonebot.logger.info(f'Started napcat-utf8.bat with new process')
+    except Exception as e:
+        nonebot.logger.error(f'启动登录脚本失败: {e}')
+
 @driver.on_bot_disconnect
 async def reconnect(bot: Bot):
     global bot_id
@@ -184,7 +223,7 @@ async def reconnect(bot: Bot):
         async with aiofiles.open(mode_file, 'r') as f:
             mode_data = await f.read()
             mode_data = json.loads(mode_data)
-            if  mode_data:
+            if mode_data:
                 nonebot.logger.info("检测到指令重启，跳过重连")
                 return
     except FileNotFoundError:
@@ -194,45 +233,19 @@ async def reconnect(bot: Bot):
         return
 
     nonebot.logger.info('检测到连接已断开，将在10s后自动发起重连')
-    time.sleep(10)
+    await asyncio.sleep(10)
+    version_up = await is_qq_version_at_least_9_9_12()
+    if platform.system().lower() == 'windows' and version_up:
+        print(f"{bot_id}")
+        await start_program_async(bot_id = bot_id)
+        return
     target_path = os.path.normcase(os.path.normpath(os.path.join(base_path, topfolder)))
-
-    found = False
-
-    for proc in psutil.process_iter(['pid', 'name', 'exe', 'cwd']):
-        if proc.info['name'] == 'cmd.exe':
-            pid = proc.info['pid']
-            cwd = proc.info['cwd']
-            exe = proc.info['exe']
-            normalized_cwd = os.path.normcase(os.path.normpath(cwd))
-
-            nonebot.logger.info(f'PID: {pid}, CWD: {normalized_cwd}, EXE: {exe}')
-            if normalized_cwd == target_path:
-                proc.kill()
-                nonebot.logger.info(f'Killed process with PID: {pid}')
-                found = True
-
-                bat_path = os.path.join(target_path, 'napcat-utf8.bat')
-                command = f'cmd.exe /c start "" "{bat_path}" -q {bot_id}'
-
-                try:
-                    startupinfo = subprocess.STARTUPINFO()
-                    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                    subprocess.Popen(command, cwd=target_path, startupinfo=startupinfo)
-                    nonebot.logger.info(f'Started napcat-utf8.bat with PID: {pid}')
-                except Exception as e:
-                    nonebot.logger.error(f'启动登录脚本失败: {e}')
-    if not found:
-        bat_path = os.path.join(target_path, 'napcat-utf8.bat')
-        command = f'cmd.exe /c start "" "{bat_path}" -q {bot_id}'
-
-        try:
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            subprocess.Popen(command, cwd=target_path, startupinfo=startupinfo)
-            nonebot.logger.info(f'Started napcat-utf8.bat without finding a matching CMD process')
-        except Exception as e:
-            nonebot.logger.error(f'启动登录脚本失败: {e}')
+    found = await kill_cmd_process(target_path)
+    if found:
+        await start_script(target_path, bot_id)
+    else:
+        nonebot.logger.info('No matching CMD process found, starting script directly')
+        await start_script(target_path, bot_id)
 
 @on_message_sent.handle()
 async def handle_message_sent(bot: Bot, event: Event):
