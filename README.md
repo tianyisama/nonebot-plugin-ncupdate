@@ -151,6 +151,11 @@ nc_self_update="橘子更新nc"
 nc_self_restart="橘子重启nc"
 nc_reconnect=true
 ```
+如果你使用的是9.9.12版本的ntqq，那么他应该类似于这样
+```ini
+base_path=D:\\qqnt\\resources\\app\\app_launcher
+topfolder=napcat
+```
 #### Linux配置示例
 ```ini
 base_path=/root
