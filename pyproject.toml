@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-plugin-ncupdate"
-version = "0.1.4"
+version = "0.1.5"
 description = "A nonebot plugin for update NapCat"
 authors = ["tianyisama"]
 license = "MIT"
