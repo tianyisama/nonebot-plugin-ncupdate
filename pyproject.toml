@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-plugin-ncupdate"
-version = "0.1.5"
+version = "0.1.7"
 description = "A nonebot plugin for update NapCat"
 authors = ["tianyisama"]
 license = "MIT"
@@ -15,6 +15,7 @@ psutil = ">=5.9.0,<6.0.0"
 aiofiles = ">=23.2.1"
 httpx = ">=0.23.3"
 packaging = ">=24.1"
+tkinter = ">=8.6"
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
 
