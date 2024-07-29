@@ -17,7 +17,7 @@ async def kill_cmd_processes_at_path(exe_path):
             normalized_proc_cwd = os.path.normpath(proc_cwd)
 
             if normalized_exe_dir == normalized_proc_cwd:
-                print(f"Killing CMD process with PID {proc.info['pid']} at path {exe_dir}")
+                nonebot.logger.info(f"Killing CMD process with PID {proc.info['pid']} at path {exe_dir}")
                 proc.kill()
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             continue
@@ -36,25 +36,25 @@ async def start_program_async(bot=None, event=None, value=None, bot_id=None):
             exe_dir = os.path.dirname(exe_path)
 
             if not exe_dir or not os.path.exists(exe_dir):
-                print(f"Invalid executable directory: '{exe_dir}'")
+                nonebot.logger.warning(f"Invalid executable directory: '{exe_dir}'")
                 return
 
             args = f"--enable-logging -q {bot_id}"
             await kill_cmd_processes_at_path(exe_path)
         else:
-            print("Unable to read the registry value for DisplayIcon.")
+            nonebot.logger.warning("Unable to read the registry value for DisplayIcon.")
             return
 
         if not os.path.exists(exe_path):
-            print(f"Executable not found: {exe_path}")
+            nonebot.logger.warning(f"Executable not found: {exe_path}")
             return
 
         batch_command = f'chcp 65001>nul && "{exe_path}" {args}'
         command = f'start cmd.exe /k "cd /d "{exe_dir}" && {batch_command}"'
-        print(f"Executing command: {command}")
+        nonebot.logger.info(f"Executing command: {command}")
         if value == 1:
             await notice(bot, event)
         proc = await asyncio.create_subprocess_shell(command, cwd=exe_dir, shell=True)
         await proc.communicate()
     except Exception as e:
-        print(f"An error occurred: {e}")
+        nonebot.logger.error(f"An error occurred: {e}")

@@ -7,6 +7,7 @@ from .config import Config, config
 from .version import is_qq_version_at_least_9_9_12
 from .restart_12 import start_program_async
 from .notice import notice
+from .dialog import tkinter_dialog
 import httpx
 import aiofiles
 import zipfile
@@ -19,10 +20,7 @@ import psutil
 import subprocess
 import time
 import platform
-try:
-    import winreg
-except ImportError:
-    winreg = None
+
 __plugin_meta__ = PluginMetadata(
     name="指令更新NapCat",
     description="指令更新NapCat",
@@ -218,7 +216,9 @@ async def reconnect(bot: Bot):
     if not nc_reconnect:
         nonebot.logger.info("未开启断线重连，已跳过重连请求")
         return
-
+    if platform.system().lower() == 'linux':
+        nonebot.logger.warning('暂不支持linux重连')
+        return
     try:
         async with aiofiles.open(mode_file, 'r') as f:
             mode_data = await f.read()
@@ -233,19 +233,26 @@ async def reconnect(bot: Bot):
         return
 
     nonebot.logger.info('检测到连接已断开，将在10s后自动发起重连')
-    await asyncio.sleep(10)
-    version_up = await is_qq_version_at_least_9_9_12()
-    if platform.system().lower() == 'windows' and version_up:
-        print(f"{bot_id}")
-        await start_program_async(bot_id = bot_id)
+    dialog_result = await tkinter_dialog()
+    if dialog_result == "restart":
+        version_up = await is_qq_version_at_least_9_9_12()
+        # 9.9.12版本的启动方式
+        if platform.system().lower() == 'windows' and version_up:
+            print(f"{bot_id}")
+            await start_program_async(bot_id = bot_id)
+            return
+        # 9.9.11及之前版本的启动方式
+        target_path = os.path.normcase(os.path.normpath(os.path.join(base_path, topfolder)))
+        found = await kill_cmd_process(target_path)
+        if found:
+            await start_script(target_path, bot_id)
+        else:
+            nonebot.logger.info('No matching CMD process found, starting script directly')
+            await start_script(target_path, bot_id)
+    elif dialog_result == "cancel":
+        nonebot.logger.info('已取消本次重连')
         return
-    target_path = os.path.normcase(os.path.normpath(os.path.join(base_path, topfolder)))
-    found = await kill_cmd_process(target_path)
-    if found:
-        await start_script(target_path, bot_id)
-    else:
-        nonebot.logger.info('No matching CMD process found, starting script directly')
-        await start_script(target_path, bot_id)
+
 
 @on_message_sent.handle()
 async def handle_message_sent(bot: Bot, event: Event):
@@ -253,3 +260,5 @@ async def handle_message_sent(bot: Bot, event: Event):
         await handle_update_nc(bot, event)
     elif isinstance(event, Event) and event.raw_message == nc_self_restart:
         await handle_restart(bot, event)
+
+
