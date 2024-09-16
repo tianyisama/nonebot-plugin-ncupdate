@@ -31,7 +31,7 @@ async def start_program_async(bot=None, event=None, value=None, bot_id=None):
 
         if display_icon_value:
             exe_path = display_icon_value.split(',')[0].strip("'").strip()
-            nonebot.logger.info(f"NTQQ安装位置： '{exe_path}'")
+            nonebot.logger.info(f"获取到NTQQ安装位置： '{exe_path}'")
 
             exe_dir = os.path.dirname(exe_path)
 
