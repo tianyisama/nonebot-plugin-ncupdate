@@ -60,7 +60,10 @@ async def ciallo(latest_version: str) -> bool:
     elif version.parse("2.2.19") <= latest_version_parsed <= version.parse("2.2.29"):
         return patch_number >= 27254
 
-    elif latest_version_parsed >= version.parse("2.2.30"):
-        return patch_number >= 27597
+    elif version.parse("2.2.30") <= latest_version_parsed <= version.parse("2.5.3"):
+        return 27597 <= patch_number < 28060
+    
+    elif latest_version_parsed >= version.parse("2.5.4"):
+        return patch_number >= 28060
 
     return False
