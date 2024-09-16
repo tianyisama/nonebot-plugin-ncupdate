@@ -1,24 +1,25 @@
-出差了大半个月，nc更新好像有亿点多
-
-龟速更新预备中（
-
 # nonebot-plugin-ncupdate
-指令更新nc的全自动懒人插件，通过指令`更新nc`即可全自动更新nc并自动重连
-
+管理nc的全自动懒人插件，主要应用于Windows
 # ⚠警告
 本插件含有大量屎山代码
 
-~~由于NTQQ在9.9.12发生了大范围改动，NapCat的启动方式变化巨大且不支持快速登录和重启，本插件暂不适用于9.9.12版本及以上的NTQQ~~(已适配)
+由于我本人非常懒，因此Linux只支持更新及重启
 
+新增的配置项`nc_restart_way`很重要
 
-如果你的NTQQ版本为9.9.11及以前，本插件仍然适用
+建议Windows用户选择2或3的启动方式
 
-一拳把企鹅🐎打飞😡👊
+断线重连只支持2和3的启动方式
 
-拾雪说老启动方法会复活，所以先咕咕咕 Ciallo～(∠・ω< )⌒★!
-
-咕不了一点，本插件现已适配9.9.12的ntqq，但改动较多，若手动替换文件更新，需要安装依赖`pip install packaging`
+查看qq版本只支持Windows
 ## 更新
+
+### 9.16
+- 添加了2.x版本的适配
+- 移除了配置项`nc_http_port`，新增了配置项`nc_restart_way` `nc_self_qq_version` `nc_self_restart`
+- 新增了指令`nc检查更新` `查看qq/QQ版本` `柚子检查更新` `柚子查看qq版本`，指令`(柚子)更新nc`新增可指定版本，例如`(柚子)更新nc1.8.2`
+- 新增内置判断napcat是否与ntqq兼容，不兼容会终止更新
+- 新增多种可选的启动方式
 ### 7.29
 - 由于nb端改代码导致的reload也会触发重连，而且被硬控十秒(nb会在执行完代码后再关闭)。欸🤓👆，我有个好点子
 - 添加了自动重连的窗口，可选择是否立即重启或取消重启
@@ -50,33 +51,23 @@
 </details>
 
 ## 说明
-~~没上传到商店也没有pypi，有需要可以自行下载替换~~
-
-**目前只支持1.5.2及以上版本的NapCat**，此前版本没有重启nc端的功能，请手动将版本升级到1.5.2以确保后续版本的自动更新
-
-支持linux，支持自身触发更新或重启，支持选择代理
 
 
-**请打开你的napcat的http服务，否则无法重启nc**，前往nc的账号配置文件(如onebot11_123456789.json)，将下部分内容的`enable`设置为`true`，`port`与配置项`nc_http_port`设为一致
-```json
-"http": {
-    "enable": true,
-    "host": "",
-    "port": 3000,
-    "secret": "",
-    "enableHeart": false,
-    "enablePost": false,
-    "postUrls": []
-  },
-```
-支持断线重连（默认关闭，目前仅支持Windows），**不是开机自连，~~也不支持闪退重连~~**（nc都闪退了系统也该埋了x）
+支持自身触发更新或重启，支持选择代理，支持获取QQ版本且自行判断是否适用新版napcat（目前仅判断到2.5.1）
+
+支持断线重连（默认关闭，目前仅支持Windows，且只支持初版bat登录法和way03方法）
 
 ### 指令
 
+- 指令皆只有超级用户或自身可用
 
-- 更新nc（仅超级用户可用）
+- 更新nc
 
-- 重启nc（仅超级用户可用）
+- 重启nc
+
+- 查看qq(QQ)版本
+
+- nc检查更新
 
 - 柚子更新nc（自身作为bot触发的更新指令）
 
@@ -90,10 +81,27 @@
 
 > 以下配置项可在 `.env.*` 文件中设置，具体参考 [NoneBot 配置方式](https://nonebot.dev/docs/appendices/config)
 
+#### `nc_restart_way` （重要新增）
+
+- 默认：`1`
+- 说明：napcat触发更新或重启时的重启方式
+- 可选：
+
+1.onebot接口的重启方式，部分napcat版本接口是坏的，Linux只可选用此方式（因为其他的没写）
+  
+2.旧时代版本napcat-utf8.bat的启动方式，QQ版本9.12之后此方法已失效
+  
+3.way03：QQ.exe的启动方式，需要更改qq文件并配置补丁，具体参考 [way03启动方式](https://napneko.github.io/zh-CN/guide/boot/shell/BootWay03)
+  
+4.way05：ps1的启动方式，无需更改文件但需要替换补丁，具体参考 [way05启动方式](https://napneko.github.io/zh-CN/guide/boot/shell/BootWay05)
+  
+- 必填：否
+- 警告：Linux请选1，Windows：最好不要选1，因为部分版本接口坏了用不了，3和4的启动方式只可选择一个（因为启用了way05后，way03方法会失效）
+
 #### `base_path`
 
 - 默认：`C:\\napcat`
-- 说明：napcat运行目录的上级目录路径，例如原运行于`E:\111\NapCat.win32.x64`，则填写`E:\\111`
+- 说明：napcat运行目录的上级目录路径，例如原运行于`E:\111\NapCat.win32.x64`，则填写`E:\111`
 - 必填：否
 
 #### `topfolder`
@@ -122,12 +130,6 @@
 - 说明：代理使用的端口
 - 必填：否
 
-#### `nc_http_port`
-
-- 默认：`3000`
-- 说明：napcat的http服务运行端口
-- 必填：否
-
 #### `nc_self_update`
 
 - 默认：`"柚子更新nc"`
@@ -138,6 +140,18 @@
 
 - 默认：`"柚子重启nc"`
 - 说明：当bot是自己的时候触发的重启指令
+- 必填：否
+
+#### `nc_self_restart`
+
+- 默认：`"柚子检查更新"`
+- 说明：当bot是自己的时候触发的检查更新
+- 必填：否
+
+#### `nc_self_qq_version`
+
+- 默认：`"柚子查看qq版本"`
+- 说明：当bot是自己的时候触发的查看qq版本
 - 必填：否
 
 #### `nc_reconnect`
@@ -156,14 +170,16 @@ topfolder=NapCat
 napcat_mode=win
 nc_proxy=true
 nc_proxy_port=11451
-nc_http_port=3000
 nc_self_update="橘子更新nc"
 nc_self_restart="橘子重启nc"
 nc_reconnect=true
+nc_self_check_update="柚子检查更新"
+nc_self_qq_version="柚子查看qq版本"
+nc_restart_way=1
 ```
 如果你使用的是9.9.12版本的ntqq，那么他应该类似于这样
 ```ini
-base_path=D:\\qqnt\\resources\\app\\app_launcher
+base_path=D:\qqnt\resources\app\app_launcher
 topfolder=napcat
 ```
 #### Linux配置示例
@@ -173,14 +189,17 @@ topfolder=NapCat.linux.x64
 napcat_mode=linux
 nc_proxy=true
 nc_proxy_port=11451
-nc_http_port=3000
 nc_self_update="橘子更新nc"
 nc_self_restart="橘子重启nc"
 nc_reconnect=false
+nc_self_check_update="柚子检查更新"
+nc_self_qq_version="柚子查看qq版本"
+nc_restart_way=1
 ```
 ## 挖坑
-- 准备实现linux断线重连
-- ~~准备上传到商店~~
+- 准备实现linux断线重连和相关功能
+- 准备增加初始一键安装napcat
+- 准备将最新的启动方式加进去
 
 ## 致谢
 
