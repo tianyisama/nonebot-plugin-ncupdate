@@ -5,7 +5,7 @@ from nonebot.exception import FinishedException
 from nonebot.plugin import PluginMetadata
 from nonebot.params import CommandArg
 from .config import Config, config
-from .version import is_qq_version_at_least_9_9_12, get_qq_patch_number, ciallo, get_qq_version_info
+from .version import is_qq_version_at_least_9_9_12, get_qq_patch_number, ciallo, get_qq_version_info, qq_version
 from .restart_12 import start_program_async
 from .notice import notice
 from .dialog import tkinter_dialog
@@ -91,8 +91,8 @@ async def get_latest_release(napcat_mode, version_info, specific_version=None):
             asset_keyword = {
                 "win": "NapCat.Shell.zip",
                 "win_32": "NapCat.Shell.zip",
-                "linux": "NapCat.Framework",
-                "linux_arm": "NapCat.Framework"
+                "linux": "NapCat.Shell.zip",
+                "linux_arm": "NapCat.Shell.zip"
             }[napcat_mode]
         else:
             asset_keyword = asset_keyword[napcat_mode]
@@ -272,7 +272,7 @@ async def handle_update_info():
             release_data = resp.json()
             tag_name = release_data["tag_name"]
             body = release_data["body"]
-            qq_version = await get_qq_patch_number()
+            qq_version = await get_qq_version_info()
             message = f"最新版本: {tag_name}\n更新内容:\n{body}\n当前的QQ版本是:{qq_version}"
 
             await update_info.send(message)
@@ -447,6 +447,6 @@ async def handle_message_sent(bot: Bot, event: Event):
         elif nc_self_check_update == event.raw_message:
             await handle_update_info()
         elif nc_self_qq_version == event.raw_message:
-            await get_qq_version_info()
+            await qq_version()
 
 

@@ -1,8 +1,14 @@
-import tkinter as tk
+# 真有系统不带tk库
+try:
+    import tkinter as tk
+    import tkinter.font as tkFont
+    from tkinter import messagebox
+except ImportError:
+    tk = None
+    tkFont =None
 import asyncio
 import threading
-import tkinter.font as tkFont
-from tkinter import messagebox
+
 
 def run_tkinter_dialog(loop, future):
     def on_restart():
