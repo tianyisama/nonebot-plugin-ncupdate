@@ -88,7 +88,7 @@ async def get_qq_version_debian() -> int:
 async def ciallo(latest_version: str) -> bool:
 
     latest_version = latest_version.lstrip('v')
-    patch_number = await get_qq_patch_number()
+    patch_number = await get_qq_version_info()
 
 
     if latest_version.startswith("1"):
