@@ -11,9 +11,10 @@
 
 断线重连只支持2和3的启动方式
 
-查看qq版本只支持Windows
+~~查看qq版本只支持Windows~~
 ## 更新
-
+### 10.1
+- 添加了Linux查看qq版本（支持Ubuntu，Centos，Rocky，Debian）
 ### 9.16
 - 添加了2.x版本的适配
 - 移除了配置项`nc_http_port`，新增了配置项`nc_restart_way` `nc_self_qq_version` `nc_self_restart`
@@ -65,7 +66,7 @@
 
 - 重启nc
 
-- 查看qq(QQ)版本
+- 查看qq(QQ)版本/qqv
 
 - nc检查更新
 
