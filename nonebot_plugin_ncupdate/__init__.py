@@ -157,11 +157,9 @@ async def handle_update_nc(bot: Bot, event: Event, args: Message = CommandArg())
             if specific_version:
                 asset, latest_version, current_version = await get_latest_release(
                     napcat_mode, version_info, specific_version=f"v{specific_version}")
-
             else:
                 asset, latest_version, current_version = await get_latest_release(napcat_mode, version_info)
-        except ValueError as e:
-            
+        except ValueError as e:            
             await update_nc.finish(str(e)) 
         if latest_version == current_version:
             await update_nc.finish(f"已经是最新版了~\n当前版本:{current_version}")
@@ -209,10 +207,10 @@ async def handle_restart(bot: Bot, event: Event):
             await notice(bot, event)
             found = await kill_cmd_process(target_path)
             if found:
-                await start_script(target_path, bot_id, bat='napcat-utf8.bat')
+                await start_script(target_path, bot_id, bat='napcat-utf8.bat', q_option=True)
             else:
                 nonebot.logger.info('No matching CMD process found, starting script directly')
-                await start_script(target_path, bot_id, bat='napcat-utf8.bat')
+                await start_script(target_path, bot_id, bat='napcat-utf8.bat', q_option=True)
         elif nc_restart_way == 3:
             if platform.system().lower() == 'windows':
                 version_up = await is_qq_version_at_least_9_9_12()
@@ -236,14 +234,13 @@ async def handle_restart(bot: Bot, event: Event):
                     return
                 else:
                     await notice(bot, event)
-                    found = await kill_ps_process(target_path)
+                    found = await kill_target_processes('powershell.exe', target_path)
                     if found:
                         await start_powershell_script(target_path, bot_id)
                     else:
                         await start_powershell_script(target_path, bot_id)
             else:
                 await bot.send(event, "只有Windows才能用这个方法啦！")
-        '''
         elif nc_restart_way == 5:
             if platform.system().lower() == 'windows':
                 version_info = await bot.get_version_info()
@@ -254,10 +251,30 @@ async def handle_restart(bot: Bot, event: Event):
                     return
                 else:
                     await notice(bot, event)
-                    found = await kill_cmd_process(target_path)
+                    found = await kill_target_processes('cmd.exe', target_path)
                     if found:
-                        await start_script(target_path, bot_id, bat='napcat-utf8.bat')
-        '''
+                        await start_script(target_path, bot_id, bat='launcher-win10.bat', q_option=False)
+                    else:
+                        await start_script(target_path, bot_id, bat='launcher-win10.bat', q_option=False)
+            else:
+                await bot.send(event, "只有Windows才能用这个方法啦！")
+        elif nc_restart_way == 6:
+            if platform.system().lower() == 'windows':
+                version_info = await bot.get_version_info()
+                app_version = version_info['app_version']
+                app_version_parsed = version.parse(app_version)
+                if app_version_parsed < version.parse("2.4.6"):
+                    await bot.send(event, "笨蛋！Napcat版本太低啦\n至少要为2.4.6!")
+                    return
+                else:
+                    await notice(bot, event)
+                    found = await kill_target_processes('cmd.exe', target_path)
+                    if found:
+                        await start_script(target_path, bot_id, bat='launcher.bat', q_option=False)
+                    else:
+                        await start_script(target_path, bot_id, bat='launcher.bat', q_option=False)
+            else:
+                await bot.send(event, "只有Windows才能用这个方法啦！")
     except Exception as e:
         await restart.send(f"发送重启请求时出现错误：{str(e)}")
 
@@ -326,12 +343,13 @@ async def kill_cmd_process(target_path):
                 break
     return found
 
-async def start_script(target_path, bot_id, bat=None):
+async def start_script(target_path, bot_id, bat=None, q_option=True):
     if bat is None:
         bat = 'napcat-utf8.bat'
 
     bat_path = os.path.join(target_path, bat)
-    command = f'cmd.exe /c start "" "{bat_path}" -q {bot_id}'
+    param = '-q' if q_option else ''
+    command = f'cmd.exe /c start "" "{bat_path}" {param} {bot_id}'
 
     try:
         process = await asyncio.create_subprocess_shell(
@@ -342,17 +360,17 @@ async def start_script(target_path, bot_id, bat=None):
     except Exception as e:
         nonebot.logger.error(f'启动登录脚本失败: {e}')
         raise ValueError(f"脚本不存在")
-async def kill_ps_process(target_path):
-    def kill_qq_processes(ps_create_time):
-        for qq_proc in psutil.process_iter(['name', 'create_time']):
-            if qq_proc.info['name'] == 'QQ.exe':
-                qq_create_time = datetime.fromtimestamp(qq_proc.info['create_time'])
-                if qq_create_time > ps_create_time:
-                    qq_proc.kill()
-                    qq_proc.wait(timeout=3)
-                    nonebot.logger.info(f'Killed related QQ process with PID: {qq_proc.pid}')
+async def kill_target_processes(target_name, target_path):
+    def kill_related_processes(proc_name, proc_create_time):
+        for proc in psutil.process_iter(['name', 'create_time']):
+            if proc.info['name'].lower() == proc_name.lower():
+                create_time = datetime.fromtimestamp(proc.info['create_time'])
+                if create_time > proc_create_time:
+                    proc.kill()
+                    proc.wait(timeout=3)
+                    nonebot.logger.info(f'Killed related process {proc_name} with PID: {proc.pid}')
 
-    def kill_ps_and_children(proc):
+    def kill_proc_and_children(proc):
         children = proc.children(recursive=True)
         for child in children:
             child.kill()
@@ -360,24 +378,24 @@ async def kill_ps_process(target_path):
             nonebot.logger.info(f'Killed child process with PID: {child.pid}')
         proc.kill()
         proc.wait(timeout=3)
-        nonebot.logger.info(f'Killed PowerShell parent process with PID: {proc.pid}')
+        nonebot.logger.info(f'Killed {target_name} parent process with PID: {proc.pid}')
 
     found = False
     for proc in psutil.process_iter(['pid', 'name', 'exe', 'create_time']):
         try:
-            if proc.info['name'].lower() in ('powershell.exe', 'pwsh'):
+            if proc.info['name'].lower() == target_name.lower():
                 cwd = proc.cwd()
                 normalized_cwd = os.path.normcase(os.path.normpath(cwd))
                 nonebot.logger.info(f'PID: {proc.info["pid"]}, CWD: {normalized_cwd}')
                 if normalized_cwd == os.path.normcase(os.path.normpath(target_path)):
                     found = True
-                    ps_create_time = datetime.fromtimestamp(proc.info['create_time'])
-                    nonebot.logger.info(f'PowerShell PID: {proc.info["pid"]} started at {ps_create_time}')
-                    kill_qq_processes(ps_create_time)
-                    kill_ps_and_children(proc)
+                    proc_create_time = datetime.fromtimestamp(proc.info['create_time'])
+                    nonebot.logger.info(f'{target_name} PID: {proc.info["pid"]} started at {proc_create_time}')
+                    kill_related_processes('QQ.exe', proc_create_time)
+                    kill_proc_and_children(proc)
                     break
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass 
+            pass
     return found
 
 async def start_powershell_script(target_path, bot_id):
