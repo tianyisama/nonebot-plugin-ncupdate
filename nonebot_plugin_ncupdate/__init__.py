@@ -5,23 +5,17 @@ from nonebot.exception import FinishedException
 from nonebot.plugin import PluginMetadata
 from nonebot.params import CommandArg
 from .config import Config, config
-from .version import is_qq_version_at_least_9_9_12, get_qq_patch_number, ciallo, get_qq_version_info, qq_version
-from .restart_12 import start_program_async
-from .notice import notice
+from .version import ciallo, get_qq_version_info, qq_version
 from .dialog import tkinter_dialog
-from packaging import version
+from .restart import BotRestarter
+from .unzip import unzip_v1, unzip_v2
 import httpx
 import aiofiles
-import zipfile
 import os
-import shutil
 import nonebot
-import asyncio
 import json
-import psutil
 import platform
-import subprocess
-from datetime import datetime
+
 
 __plugin_meta__ = PluginMetadata(
     name="指令更新NapCat",
@@ -112,37 +106,7 @@ async def download_file(download_url, filename):
         async with aiofiles.open(file_path, 'wb') as file:
             await file.write(download_resp.content)
         return file_path
-# 1.x版本的解压方式
-async def unzip_v1(zip_file_path, base_path, topfolder):
-    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-        for member in zip_ref.namelist():
-            try:
-                relative_path = member.partition('/')[2]
-                if relative_path:
-                    new_path = os.path.join(base_path, topfolder, relative_path)
-                    os.makedirs(os.path.dirname(new_path), exist_ok=True)
-                    with zip_ref.open(member, 'r') as source, open(new_path, 'wb') as target:
-                        shutil.copyfileobj(source, target)
-            except zipfile.BadZipFile:
-                continue
-            except OSError:
-                continue
-# 2.x版本的解压方式
-async def unzip_v2(zip_file_path, base_path, topfolder):
-    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-        for member in zip_ref.namelist():
-            try:
-                relative_path = member if member.endswith('/') else member
-                if relative_path:
-                    new_path = os.path.join(base_path, topfolder, relative_path)
-                    os.makedirs(os.path.dirname(new_path), exist_ok=True)
-                    if not member.endswith('/'):
-                        with zip_ref.open(member, 'r') as source, open(new_path, 'wb') as target:
-                            shutil.copyfileobj(source, target)
-            except zipfile.BadZipFile:
-                continue
-            except OSError:
-                continue
+
 @help.handle()
 async def help_():
     await help.send(f"﻿Ciallo～(∠・ω<)⌒⚡\n"
@@ -150,7 +114,7 @@ async def help_():
                     "可使用如下指令：\n"
                     "(柚子)更新nc：更新Napcat最新版。若后接具体的版本号可指定具体的版本，例如：更新nc1.8.2\n"
                     "(柚子)重启nc，重新启动Napcat\n"
-                    "(柚子)查看qq版本：查看当前的QQ版本号\n"
+                    "(柚子)查看qq版本/qqv：查看当前的QQ版本号\n"
                     "nc检查更新：检查最新的版本及其更新的内容和版本要求\n"
                     "柚子检查更新：人机合一时检查更新")
 
@@ -196,132 +160,13 @@ async def handle_update_nc(bot: Bot, event: Event, args: Message = CommandArg())
         pass
     except Exception as e:
         await update_nc.send(f"发生错误：{e}")
+
 @restart.handle()
 async def handle_restart(bot: Bot, event: Event):
     global bot_id
     restarter = BotRestarter(bot_id, base_path, topfolder, disconnect=False, bot=bot, event=event, send_message=True)
     await restarter.restart_bot(nc_restart_way)
 
-class BotRestarter:
-    def __init__(self, bot_id, base_path, topfolder, disconnect, bot= None, event= None, send_message=True):
-        self.bot = bot
-        self.event = event
-        self.bot_id = bot_id
-        self.base_path = base_path
-        self.topfolder = topfolder
-        self.disconnect = disconnect
-        self.send_message = send_message
-        target_path = os.path.normcase(os.path.normpath(os.path.join(self.base_path, self.topfolder)))
-        self.target_path = target_path
-    async def send_restart_notice(self, message):
-        if self.send_message:
-            await self.bot.send(self.event, message)
-
-    async def get_parsed_app_version(self):
-        version_info = await self.bot.get_version_info()
-        app_version = version_info['app_version']
-        return version.parse(app_version)
-    
-    async def restart_bot(self, nc_restart_way):
-
-        try:
-            await self.send_restart_notice("正在重启，请稍候")
-            if nc_restart_way == 1:
-                await self.restart_method_1(self.disconnect)
-            elif nc_restart_way == 2:
-                await self.restart_method_2(self.target_path,self.disconnect)
-            elif nc_restart_way == 3:
-                await self.restart_method_3(self.disconnect)
-            elif nc_restart_way == 4:
-                await self.restart_method_4(self.target_path,self.disconnect)
-            elif nc_restart_way == 5:
-                await self.restart_method_5(self.target_path,self.disconnect)
-            elif nc_restart_way == 6:
-                await self.restart_method_6(self.target_path,self.disconnect)
-        except Exception as e:
-            await self.send_restart_notice(f"发送重启请求时出现错误：{str(e)}")
-            async with aiofiles.open(mode_file, 'w') as f:
-                await f.write(json.dumps({}))
-    async def restart_method_1(self, disconnect):
-        if disconnect:
-            await self.restart_method_6(self.target_path,self.disconnect)
-            return
-        await notice(self.bot, self.event)
-        await self.bot.set_restart(delay=1000)
-
-    async def restart_method_2(self, target_path, disconnect):
-        if platform.system().lower() == 'windows':
-            version_up = await is_qq_version_at_least_9_9_12()
-            if version_up:
-                await self.send_restart_notice("Baka!9.9.12以上不能用这个方法登录！")
-                return
-            if not disconnect:
-                await notice(self.bot, self.event)
-            found = await kill_cmd_process(target_path)
-            if found:
-                await start_script(target_path, self.bot_id, bat='napcat-utf8.bat', q_option=True)
-            else:
-                nonebot.logger.info('No matching CMD process found, starting script directly')
-                await start_script(target_path, self.bot_id, bat='napcat-utf8.bat', q_option=True)
-        else:
-            await self.send_restart_notice("只有Windows才能用这个方法啦！")
-    async def restart_method_3(self,disconnect):
-        if platform.system().lower() == 'windows':
-            version_up = await is_qq_version_at_least_9_9_12()
-            if not disconnect:
-                await notice(self.bot, self.event)
-            if version_up:
-                await start_program_async(bot_id)
-        else:
-            await self.send_restart_notice("只有Windows才能用这个方法啦！")
-    async def restart_method_4(self, target_path, disconnect):
-        if platform.system().lower() == 'windows':
-            if not disconnect:
-                app_version_parsed = await self.get_parsed_app_version()
-                if app_version_parsed < version.parse("1.7.2"):
-                    await self.send_restart_notice("笨蛋！Napcat版本太低啦\n至少要为1.7.2!")
-                    return
-                await notice(self.bot, self.event)
-            found = await kill_target_processes('powershell.exe', target_path)
-            if found:
-                await start_powershell_script(target_path, bot_id)
-            else:
-                nonebot.logger.info('No matching PS process found, starting script directly')
-                await start_powershell_script(target_path, bot_id)
-        else:
-            await self.send_restart_notice("只有Windows才能用这个方法啦！")
-    async def restart_method_5(self, target_path, disconnect):
-        if platform.system().lower() == 'windows':
-            if not disconnect:
-                app_version_parsed = await self.get_parsed_app_version()
-                if app_version_parsed < version.parse("2.4.6"):
-                    await self.send_restart_notice("笨蛋！Napcat版本太低啦\n至少要为2.4.6!")
-                    return
-                await notice(self.bot, self.event)
-            found = await kill_target_processes('cmd.exe', target_path)
-            if found:
-                await start_script(target_path, bot_id, bat='launcher-win10', q_option=False)
-            else:
-                nonebot.logger.info('No matching CMD process found, starting script directly')
-                await start_script(target_path, bot_id, bat='launcher-win10', q_option=False)
-        else:
-            await self.send_restart_notice("只有Windows才能用这个方法啦！")
-    async def restart_method_6(self, target_path, disconnect):
-        if platform.system().lower() == 'windows':
-            if not disconnect:
-                app_version_parsed = await self.get_parsed_app_version()
-                if app_version_parsed < version.parse("2.4.6"):
-                    await self.send_restart_notice("笨蛋！Napcat版本太低啦\n至少要为2.4.6!")
-                    return
-                await notice(self.bot, self.event)
-            found = await kill_target_processes('cmd.exe', target_path)
-            if found:
-                await start_script(target_path, bot_id, bat='launcher.bat', q_option=False)
-            else:
-                nonebot.logger.info('No matching CMD process found, starting script directly')
-                await start_script(target_path, bot_id, bat='launcher.bat', q_option=False)
-        else:
-            await self.send_restart_notice("只有Windows才能用这个方法啦！")
 
 @update_info.handle()
 async def handle_update_info(bot: Bot):
@@ -349,87 +194,7 @@ async def handle_update_info(bot: Bot):
     except Exception as e:
         await update_info.send(f"发生错误：{e}")
 
-async def kill_cmd_process(target_path):
-    found = False
-    for proc in psutil.process_iter(['pid', 'name', 'exe', 'cwd']):
-        if proc.info['name'] == 'cmd.exe':
-            pid = proc.info['pid']
-            cwd = proc.info['cwd']
-            normalized_cwd = os.path.normcase(os.path.normpath(cwd))
 
-            nonebot.logger.info(f'PID: {pid}, CWD: {normalized_cwd}')
-            if normalized_cwd == target_path:
-                proc.kill()
-                nonebot.logger.info(f'Killed process with PID: {pid}')
-                found = True
-                break
-    return found
-
-async def start_script(target_path, bot_id, bat=None, q_option=True):
-    if bat is None:
-        bat = 'napcat-utf8.bat'
-
-    bat_path = os.path.join(target_path, bat)
-    param = '-q' if q_option else ''
-    command = f'cmd.exe /c start "" "{bat_path}" {param} {bot_id}'
-
-    try:
-        process = await asyncio.create_subprocess_shell(
-            command,
-            cwd=target_path
-        )
-        nonebot.logger.info(f'已启动 {bat} 的新进程')
-    except Exception as e:
-        nonebot.logger.error(f'启动登录脚本失败: {e}')
-        raise ValueError(f"脚本不存在")
-
-async def kill_target_processes(target_name, target_path):
-    def kill_related_processes(proc_name, proc_create_time):
-        for proc in psutil.process_iter(['name', 'create_time']):
-            if proc.info['name'].lower() == proc_name.lower():
-                create_time = datetime.fromtimestamp(proc.info['create_time'])
-                if create_time > proc_create_time:
-                    proc.kill()
-                    proc.wait(timeout=3)
-                    nonebot.logger.info(f'Killed related process {proc_name} with PID: {proc.pid}')
-
-    def kill_proc_and_children(proc):
-        children = proc.children(recursive=True)
-        for child in children:
-            child.kill()
-            child.wait(timeout=3)
-            nonebot.logger.info(f'Killed child process with PID: {child.pid}')
-        proc.kill()
-        proc.wait(timeout=3)
-        nonebot.logger.info(f'Killed {target_name} parent process with PID: {proc.pid}')
-
-    found = False
-    for proc in psutil.process_iter(['pid', 'name', 'exe', 'create_time']):
-        try:
-            if proc.info['name'].lower() == target_name.lower():
-                cwd = proc.cwd()
-                normalized_cwd = os.path.normcase(os.path.normpath(cwd))
-                nonebot.logger.info(f'PID: {proc.info["pid"]}, CWD: {normalized_cwd}')
-                if normalized_cwd == os.path.normcase(os.path.normpath(target_path)):
-                    found = True
-                    proc_create_time = datetime.fromtimestamp(proc.info['create_time'])
-                    nonebot.logger.info(f'{target_name} PID: {proc.info["pid"]} started at {proc_create_time}')
-                    kill_related_processes('QQ.exe', proc_create_time)
-                    kill_proc_and_children(proc)
-                    break
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass
-    return found
-
-async def start_powershell_script(target_path, bot_id):
-    ps1_path = os.path.join(target_path, 'BootWay05.ps1')
-    command = f'start powershell.exe -NoExit -ExecutionPolicy Bypass -File "{ps1_path}" -q {bot_id}'
-
-    try:
-        process = subprocess.Popen(command, cwd=target_path, shell=True)
-        nonebot.logger.info(f'Started BootWay05.ps1 in a new window')
-    except Exception as e:
-        nonebot.logger.error(f'Failed to start the script: {e}')
 
 @driver.on_bot_connect
 async def reconnected(bot: Bot):
