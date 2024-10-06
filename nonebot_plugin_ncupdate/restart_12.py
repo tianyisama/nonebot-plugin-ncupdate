@@ -4,7 +4,6 @@ import os
 import psutil
 from .info import get_qq_registry_values_async
 from .notice import notice
-from nonebot.adapters.onebot.v11 import Bot, Event
 # Kill掉NTQQ所在目录的cmd以防重复登陆
 async def kill_cmd_processes_at_path(exe_path):
 
@@ -23,7 +22,7 @@ async def kill_cmd_processes_at_path(exe_path):
             continue
 
 # 9.9.12特有的启动方式
-async def start_program_async(bot=None, event=None, value=None, bot_id=None):
+async def start_program_async(bot_id=None):
     try:
         registry_values = await get_qq_registry_values_async()
         
@@ -52,8 +51,6 @@ async def start_program_async(bot=None, event=None, value=None, bot_id=None):
         batch_command = f'chcp 65001>nul && "{exe_path}" {args}'
         command = f'start cmd.exe /k "cd /d "{exe_dir}" && {batch_command}"'
         nonebot.logger.info(f"Executing command: {command}")
-        if value == 1:
-            await notice(bot, event)
         proc = await asyncio.create_subprocess_shell(command, cwd=exe_dir, shell=True)
         await proc.communicate()
     except Exception as e:
