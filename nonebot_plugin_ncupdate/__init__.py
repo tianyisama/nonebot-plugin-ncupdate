@@ -15,7 +15,7 @@ import os
 import nonebot
 import json
 import platform
-
+import asyncio
 
 __plugin_meta__ = PluginMetadata(
     name="指令更新NapCat",
@@ -49,7 +49,7 @@ restart = on_command("重启nc", priority=5, permission=SUPERUSER)
 help = on_command("nc帮助", priority=5, permission=SUPERUSER)
 update_info = on_command("nc检查更新", priority=5, permission=SUPERUSER)
 on_message_sent = on("message_sent", block=False)
-global bot_id
+global bot_id, cnt
 
 async def create_client():
     if nc_proxy:
@@ -145,7 +145,6 @@ async def handle_update_nc(bot: Bot, event: Event, args: Message = CommandArg())
         file_path = await download_file(download_url, asset['name'])
         try:
             await update_nc.send("正在执行文件替换")
-            nonebot.logger.info(f"{latest_version}")
             if latest_version.startswith("v1"):
                 await unzip_v1(file_path, base_path, topfolder)
             elif latest_version.startswith("v2"):
@@ -198,6 +197,8 @@ async def handle_update_info(bot: Bot):
 
 @driver.on_bot_connect
 async def reconnected(bot: Bot):
+    global cnt
+    cnt = True
     version_info = await bot.get_version_info()
     appname = version_info["app_name"]
     version = version_info["app_version"]
@@ -226,13 +227,10 @@ async def reconnected(bot: Bot):
 
 @driver.on_bot_disconnect
 async def reconnect():
-    global bot_id
-
+    global bot_id, cnt
+    cnt = False
     if not nc_reconnect:
         nonebot.logger.info("未开启断线重连，已跳过重连请求")
-        return
-    if platform.system().lower() == 'linux':
-        nonebot.logger.warning('暂不支持linux重连')
         return
     try:
         async with aiofiles.open(mode_file, 'r') as f:
@@ -248,12 +246,20 @@ async def reconnect():
         return
 
     nonebot.logger.info('检测到连接已断开，将在10s后自动发起重连')
+    await asyncio.sleep(2)
+    if cnt:
+        nonebot.logger.warning("又好了，不用重连啦")
+        return
     dialog_result = await tkinter_dialog()
     if dialog_result == "restart":
         restarter = BotRestarter(bot_id, base_path, topfolder, disconnect=True, send_message=False)
         await restarter.restart_bot(nc_restart_way)
     elif dialog_result == "cancel":
         nonebot.logger.info('已取消本次重连')
+    elif dialog_result == "tkinter not available":
+        await asyncio.sleep(8)
+        restarter = BotRestarter(bot_id, base_path, topfolder, disconnect=True, send_message=False)
+        await restarter.restart_bot(nc_restart_way)
         return
 
 

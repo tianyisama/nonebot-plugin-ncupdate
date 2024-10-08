@@ -2,7 +2,6 @@
 try:
     import tkinter as tk
     import tkinter.font as tkFont
-    from tkinter import messagebox
 except ImportError:
     tk = None
     tkFont =None
@@ -11,6 +10,10 @@ import threading
 
 
 def run_tkinter_dialog(loop, future):
+    if tk is None or tkFont is None:
+        loop.call_soon_threadsafe(future.set_result, "tkinter not available")
+        return
+
     def on_restart():
         loop.call_soon_threadsafe(future.set_result, "restart")
         root.destroy()
@@ -43,6 +46,9 @@ def run_tkinter_dialog(loop, future):
     root.mainloop()
 
 async def tkinter_dialog():
+    if tk is None or tkFont is None:
+        return "tkinter not available"
+
     loop = asyncio.get_running_loop()
     future = loop.create_future()
     t = threading.Thread(target=run_tkinter_dialog, args=(loop, future))

@@ -3,6 +3,7 @@ import nonebot
 import os
 import asyncio
 import subprocess
+import shlex
 from datetime import datetime
 from .info import get_qq_registry_values_async
 
@@ -143,3 +144,48 @@ async def start_program_async(bot_id=None):
         await proc.communicate()
     except Exception as e:
         nonebot.logger.error(f"An error occurred: {e}")
+
+async def kill_napcat_screens():
+    cmd_find = "screen -ls | grep 'napcat'"
+    find_process = await asyncio.create_subprocess_shell(
+        cmd_find,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    stdout, stderr = await find_process.communicate()
+
+    if find_process.returncode == 0:
+        sessions = stdout.decode().strip().split('\n')
+        for session in sessions:
+            session_id = session.split()[0]
+            if 'Dead' in session or 'dead' in session:
+                cmd_wipe = f"screen -wipe {session_id}"
+                await asyncio.create_subprocess_shell(
+                    cmd_wipe,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+                nonebot.logger.info(f"Wiped dead screen session {session_id}")
+            else:
+                cmd_kill = f"screen -S {session_id} -X quit"
+                await asyncio.create_subprocess_shell(
+                    cmd_kill,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+                nonebot.logger.info(f"Killed screen session {session_id}")
+    else:
+        nonebot.logger.error(f"Error finding napcat screen sessions: {stderr.decode().strip()}")
+
+async def start_napcat_screen(bot_id):
+    cmd_start = f'screen -dmS napcat bash -c "xvfb-run -a qq --no-sandbox -q {bot_id}"'
+    process = await asyncio.create_subprocess_shell(
+        cmd_start,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    stdout, stderr = await process.communicate()
+    if process.returncode == 0:
+        nonebot.logger.info(f"Started napcat screen session with bot_id: {bot_id}")
+    else:
+        nonebot.logger.error(f"Failed to start napcat screen session with bot_id: {bot_id}. Error: {stderr.decode()}")

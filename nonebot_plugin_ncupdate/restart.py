@@ -6,7 +6,7 @@ import nonebot
 from packaging import version
 from .notice import notice
 from .version import is_qq_version_at_least_9_9_12
-from .sysexec import kill_cmd_process, kill_target_processes, start_powershell_script, start_script, start_program_async
+from .sysexec import kill_cmd_process, kill_target_processes, start_powershell_script, start_script, start_program_async,kill_napcat_screens, start_napcat_screen
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 mode_file = os.path.join(current_dir, 'mode.json')
@@ -47,6 +47,8 @@ class BotRestarter:
                 await self.restart_method_5(self.target_path,self.disconnect)
             elif nc_restart_way == 6:
                 await self.restart_method_6(self.target_path,self.disconnect)
+            elif nc_restart_way == 7:
+                await self.restart_method_7(self.disconnect)
         except Exception as e:
             await self.send_restart_notice(f"发送重启请求时出现错误：{str(e)}")
             async with aiofiles.open(mode_file, 'w') as f:
@@ -131,6 +133,14 @@ class BotRestarter:
                 await start_script(target_path, self.bot_id, bat='launcher.bat', q_option=False)
         else:
             await self.send_restart_notice("只有Windows才能用这个方法啦！")
+    async def restart_method_7(self, disconnect):
+        if platform.system().lower() == 'linux':
+            if not disconnect:
+                await notice(self.bot, self.event)
+            await kill_napcat_screens()
+            await start_napcat_screen(self.bot_id)
+        else:
+            await self.send_restart_notice("只有linux才能用这个方法啦！")
 
 
 
