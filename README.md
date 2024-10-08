@@ -1,22 +1,48 @@
 # nonebot-plugin-ncupdate
 管理nc的全自动懒人插件，主要应用于Windows
 
-Linux用户不建议用本插件，建议使用一键脚本或者docker，因为手动安装很麻烦，快速部署方式详见[Napcat官方文档](https://napneko.github.io/zh-CN/guide/getting-started)
+Linux建议使用一键脚本，因为手动安装很麻烦，快速部署方式详见[Napcat官方文档](https://napneko.github.io/zh-CN/guide/getting-started)
+
+不想点进去？球球你了，去看看吧，雪雪真的很可爱~
+
+
+
+<details>
+<summary>不看不看吧😭😭😭</summary>
+使用以下代码安装napcat(Linux 一键脚本(适用于 Ubuntu 20+/Debian 10+/Centos 9))
+
+    curl -o napcat.sh https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh && sudo bash napcat.sh
+    
+
+</details>
+
+或者使用docker，放弃本插件~
 # ⚠警告
 本插件含有大量屎山代码
 
 谨记非必要不更新的道理
 
-由于我本人非常懒，因此Linux只支持更新、重启以及检查更新，【又加了个QQ版本查看 ~~（快夸我）~~】
+建议都更新到2.4.6及以上的napcat版本，然后Windows用户nc_restart_way选5/6，Linux选7
+
+由于我本人非常懒，因此Linux只支持更新、重启以及检查更新，【又加了个QQ版本查看 ~~（快夸我）~~】，又加了断线重连
 
 新增的配置项`nc_restart_way`很重要
 
-建议Windows用户选择2/3/4/5/6的启动方式
+建议Windows用户选择2/3/4/5/6的启动方式，Linux用户选择7的启动方式
 
 断线重连暂时只支持2和3的启动方式 ~~（马上就都支持了）~~ 已经支持了
 
 ~~查看qq版本只支持Windows~~
+
+linux断线重连仅支持xvfb法启动的、screen窗口名为napcat的方式
+
+如果你不懂，请使用以下代码来启动napcat(其中123456789替换为你实际的机器人账号)
+
+`screen -dmS napcat bash -c "xvfb-run -a qq --no-sandbox -q 123456789"`
 ## 更新
+### 10.8
+- 新增Linux断线重连
+- 增加了断线短暂等待，以防协议端抽风造成短时间内重连引起的死循环
 ### 10.6
 - Windows断线重连支持所有方式（除了1）
 - 重塑了部分史的形状
@@ -63,9 +89,9 @@ Linux用户不建议用本插件，建议使用一键脚本或者docker，因为
 ## 说明
 
 
-支持自身触发更新或重启，支持选择代理，支持获取QQ版本且自行判断是否适用新版napcat（目前仅判断到2.5.4【28060左右】）
+支持自身触发更新或重启，支持选择代理，支持获取QQ版本且自行判断是否适用新版napcat（目前仅判断到2.5.4附近【28060左右】）
 
-支持断线重连（默认关闭，目前仅支持Windows，且只支持初版bat登录法和way03方法）
+支持断线重连（默认关闭，~~目前仅支持Windows，且只支持初版bat登录法和way03方法~~）
 
 ### 指令
 
@@ -97,7 +123,7 @@ Linux用户不建议用本插件，建议使用一键脚本或者docker，因为
 - 说明：napcat触发更新或重启时的重启方式
 - 可选：
 
-1.onebot接口的重启方式，部分napcat版本接口是坏的，Linux只可选用此方式（因为其他的没写）
+1.onebot接口的重启方式，部分napcat版本接口是坏的，~~Linux只可选用此方式（因为其他的没写）~~
   
 2.旧时代版本napcat-utf8.bat的启动方式，QQ版本9.12之后此方法已失效
   
@@ -108,9 +134,11 @@ Linux用户不建议用本插件，建议使用一键脚本或者docker，因为
 5.launcher-win10.bat：Napcat2.4.6版本及以上的Windows10（及以下）的登录方式
 
 6.launcher.bat：Napcat2.4.6版本及以上的Windows11的登录方式
+
+7.xvfb-run: Linux的启动方法，忘了是哪个版本开始支持的了
   
 - 必填：否
-- 警告：Linux请选1，Windows：最好不要选1，因为部分版本接口坏了用不了，3和4的启动方式只可选择一个（因为启用了way05后，way03方法会失效）
+- 警告：3和4的启动方式只可选择一个（因为启用了way05后，way03方法会失效）
 
 #### `base_path`
 
@@ -211,7 +239,7 @@ nc_self_qq_version="柚子查看qq版本"
 nc_restart_way=1
 ```
 ## 挖坑
-- 准备实现linux断线重连和相关功能
+- ~~准备实现linux断线重连和相关功能~~
 - 准备增加初始一键安装napcat
 - ~~准备将最新的启动方式加进去~~
 
