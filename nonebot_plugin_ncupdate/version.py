@@ -65,8 +65,7 @@ async def get_qq_version_debian() -> int:
         process = await asyncio.create_subprocess_exec(
             "dpkg", "-l", "linuxqq",
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=False
+            stderr=subprocess.PIPE
         )
         stdout, stderr = await process.communicate()
         stdout = stdout.decode('utf-8')
