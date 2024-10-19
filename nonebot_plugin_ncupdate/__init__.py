@@ -81,7 +81,7 @@ async def get_latest_release(napcat_mode, version_info, specific_version=None):
         latest_version = release_data["tag_name"]
         current_version = f"v{version_info['app_version']}"
 
-        if latest_version.startswith("v2"):
+        if any(latest_version.startswith(prefix) for prefix in ("v2", "v3")):
             asset_keyword = {
                 "win": "NapCat.Shell.zip",
                 "win_32": "NapCat.Shell.zip",
@@ -147,7 +147,7 @@ async def handle_update_nc(bot: Bot, event: Event, args: Message = CommandArg())
             await update_nc.send("正在执行文件替换")
             if latest_version.startswith("v1"):
                 await unzip_v1(file_path, base_path, topfolder)
-            elif latest_version.startswith("v2"):
+            elif any(latest_version.startswith(prefix) for prefix in ("v2", "v3")):
                 
                 await unzip_v2(file_path, base_path, topfolder)
         except Exception as e:
