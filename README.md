@@ -40,6 +40,8 @@ linux断线重连仅支持xvfb法启动的、screen窗口名为napcat的方式
 
 `screen -dmS napcat bash -c "xvfb-run -a qq --no-sandbox -q 123456789"`
 ## 更新
+### 10.19
+- 添加了v3的适配
 ### 10.8
 - 新增Linux断线重连
 - 增加了断线短暂等待，以防协议端抽风造成短时间内重连引起的死循环
