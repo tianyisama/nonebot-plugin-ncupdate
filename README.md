@@ -49,14 +49,14 @@ linux断线重连仅支持xvfb法启动的、screen窗口名为napcat的方式
 </details>
 
 <details>
-<summary>我发指令没反应</summary>
+<summary>2.我发指令没反应</summary>
 请检查你是否在.env.*中填写了正确的superusers和command_start
     
 
 </details>
 
 <details>
-<summary>指令太多记不住</summary>
+<summary>3.指令太多记不住</summary>
 发送nc帮助查看所有指令
     
 
