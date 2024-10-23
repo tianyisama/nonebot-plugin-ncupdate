@@ -39,6 +39,21 @@ linux断线重连仅支持xvfb法启动的、screen窗口名为napcat的方式
 如果你不懂，请使用以下代码来启动napcat(其中123456789替换为你实际的机器人账号)
 
 `screen -dmS napcat bash -c "xvfb-run -a qq --no-sandbox -q 123456789"`
+
+## 常见问题
+<details>
+<summary>1.我用的Linux一键安装脚本，不知道napcat安装在哪里</summary>
+一般来说在/opt/QQ/resources/app/napcat，如果是这样的话，base_path填写/opt/QQ/resources/app，topfolder填写napcat即可
+    
+
+</details>
+
+<details>
+<summary>我发指令没反应</summary>
+请检查你是否在.env.*中填写了正确的superusers和command_start
+    
+
+</details>
 ## 更新
 ### 10.19
 - 添加了v3的适配
