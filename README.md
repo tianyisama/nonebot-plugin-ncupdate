@@ -55,6 +55,13 @@ linux断线重连仅支持xvfb法启动的、screen窗口名为napcat的方式
 
 </details>
 
+<details>
+<summary>指令太多记不住</summary>
+发送nc帮助查看所有指令
+    
+
+</details>
+
 
 ## 更新
 ### 10.19
