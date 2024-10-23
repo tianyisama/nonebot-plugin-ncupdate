@@ -54,6 +54,8 @@ linux断线重连仅支持xvfb法启动的、screen窗口名为napcat的方式
     
 
 </details>
+
+
 ## 更新
 ### 10.19
 - 添加了v3的适配
