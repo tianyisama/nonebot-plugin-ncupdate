@@ -1,7 +1,7 @@
 # nonebot-plugin-ncupdate
 管理nc的全自动懒人插件，主要应用于Windows
 
-Linux建议使用一键脚本，因为手动安装很麻烦，快速部署方式详见[Napcat官方文档](https://napneko.github.io/zh-CN/guide/getting-started)
+Linux建议使用一键脚本，因为手动安装很麻烦，快速部署方式详见[Napcat官方文档](https://napcat.napneko.icu/guide/boot/Shell)
 
 不想点进去？球球你了，去看看吧，雪雪真的很可爱~
 
@@ -43,22 +43,22 @@ linux断线重连仅支持xvfb法启动的、screen窗口名为napcat的方式
 ## 常见问题
 <details>
 <summary>1.我用的Linux一键安装脚本，不知道napcat安装在哪里</summary>
+    
 一般来说在/opt/QQ/resources/app/napcat，如果是这样的话，base_path填写/opt/QQ/resources/app，topfolder填写napcat即可
     
-
 </details>
 
 <details>
 <summary>2.我发指令没反应</summary>
+    
 请检查你是否在.env.*中填写了正确的superusers和command_start
     
-
 </details>
 
 <details>
 <summary>3.指令太多记不住</summary>
-发送nc帮助查看所有指令
     
+发送nc帮助查看所有指令
 
 </details>
 
