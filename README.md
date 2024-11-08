@@ -35,7 +35,7 @@ linux断线重连仅支持xvfb法启动的、screen窗口名为napcat的方式
 - 确保QQ版本大于等于[28060](https://dldir1.qq.com/qqfile/qq/QQNT/592d67a6/QQ9.9.16.29271_x64.exe)
 - 下载[napcat新版](https://github.com/NapNeko/NapCatQQ/releases/download/v3.6.5/NapCat.Shell.zip)到C盘（记得下载napcat.shell的版本）
 - 解压napcat压缩包，确保C:\NapCat.Shell下就是napcat的文件，比如含有napcat.mjs这个文件
-- 填写nb的.env.*文件（如果是win10，nc_restart_way值为5.win11就写6）
+- 填写nb的.env.*文件（如果是win10，nc_restart_way值为5，win11就写6）
 ```ini
 base_path=C:\\
 topfolder=NapCat.Shell
@@ -51,7 +51,7 @@ nc_restart_way=5
 <summary>Linux</summary>
     
 - 不要使用centos7或8，换个新点的系统比如Ubuntu
-- 使用一键安装脚本`curl -o napcat.sh https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh && sudo bash napcat.sh`过程选择shell安装法
+- 使用一键安装脚本`curl -o napcat.sh https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh && sudo bash napcat.sh`是否使用shell安装选择是(y)
 - 填写nb的.env.*文件
 ```ini
 base_path=/opt/QQ/resources/app
