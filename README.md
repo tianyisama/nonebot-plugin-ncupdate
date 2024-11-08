@@ -54,7 +54,7 @@ nc_restart_way=5
 - 使用一键安装脚本`curl -o napcat.sh https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh && sudo bash napcat.sh`是否使用shell安装选择是(y)
 - 填写nb的.env.*文件
 ```ini
-base_path=/opt/QQ/resources/app
+base_path=/opt/QQ/resources/app/app_launcher
 topfolder=napcat
 napcat_mode=linux
 nc_reconnect=true
@@ -75,7 +75,7 @@ nc_restart_way=7
 <details>
 <summary>1.我用的Linux一键安装脚本，不知道napcat安装在哪里</summary>
     
-一般来说在/opt/QQ/resources/app/napcat，如果是这样的话，base_path填写/opt/QQ/resources/app，topfolder填写napcat即可
+一般来说在/opt/QQ/resources/app/app_launcher/napcat，如果是这样的话，base_path填写/opt/QQ/resources/app/app_launcher，topfolder填写napcat即可
     
 </details>
 
