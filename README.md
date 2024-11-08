@@ -51,7 +51,7 @@ nc_restart_way=5
 <summary>Linux</summary>
     
 - 不要使用centos7或8，换个新点的系统比如Ubuntu
-- 使用一键安装脚本`curl -o napcat.sh https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh && sudo bash napcat.sh`
+- 使用一键安装脚本`curl -o napcat.sh https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh && sudo bash napcat.sh`过程选择shell安装法
 - 填写nb的.env.*文件
 ```ini
 base_path=/opt/QQ/resources/app
@@ -62,6 +62,13 @@ nc_restart_way=7
 ```
 - 按照nb和nc的启动方式启动连接即可正常使用
 - 有更多需求，比如需要配置代理可以往后看配置项
+</details>
+
+<details>
+<summary>termux</summary>
+    
+- 没试过不知道
+
 </details>
 
 ## 常见问题
