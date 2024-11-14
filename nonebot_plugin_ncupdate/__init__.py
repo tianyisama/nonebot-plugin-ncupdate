@@ -1,5 +1,5 @@
 from nonebot import on_command, get_driver, on
-from nonebot.adapters.onebot.v11 import Bot, Event, MessageSegment, Message
+from nonebot.adapters.onebot.v11 import Bot, Event, MessageSegment, Message,GroupMessageEvent
 from nonebot.permission import SUPERUSER
 from nonebot.exception import FinishedException
 from nonebot.plugin import PluginMetadata
@@ -68,10 +68,11 @@ async def get_latest_release(napcat_mode, version_info, specific_version=None):
         "linux": "linux.x64",
         "linux_arm": "linux.arm64"
     }
-    if specific_version:
-        release_url = f"https://api.github.com/repos/NapNeko/NapCatQQ/releases/tags/{specific_version}"
-    else:
-        release_url = "https://api.github.com/repos/NapNeko/NapCatQQ/releases/latest"
+    release_url = (
+        f"https://api.github.com/repos/NapNeko/NapCatQQ/releases/tags/{specific_version}"
+        if specific_version
+        else "https://api.github.com/repos/NapNeko/NapCatQQ/releases/latest"
+    )
     async with await create_client() as client:
         resp = await client.get(release_url)
         if resp.status_code == 404:
@@ -81,21 +82,15 @@ async def get_latest_release(napcat_mode, version_info, specific_version=None):
         latest_version = release_data["tag_name"]
         current_version = f"v{version_info['app_version']}"
 
-        if any(latest_version.startswith(prefix) for prefix in ("v2", "v3")):
-            asset_keyword = {
-                "win": "NapCat.Shell.zip",
-                "win_32": "NapCat.Shell.zip",
-                "linux": "NapCat.Shell.zip",
-                "linux_arm": "NapCat.Shell.zip"
-            }[napcat_mode]
+        if not latest_version.startswith("v1"):
+            asset_keyword = "NapCat.Shell.zip"
         else:
-            asset_keyword = asset_keyword[napcat_mode]
+            asset_keyword = asset_keyword.get(napcat_mode)
         
-        asset = next((asset for asset in release_data["assets"] if asset_keyword in asset["name"]), None)
-        if not asset:
-            raise ValueError(f"未找到对应的release")
-        
-        return asset, latest_version, current_version
+        if asset := next((asset for asset in release_data["assets"] if asset_keyword in asset["name"]), None):
+            return asset, latest_version, current_version
+        else:
+            raise ValueError("未找到对应的release")
 
 async def download_file(download_url, filename):
     async with await create_client() as client:
@@ -120,45 +115,40 @@ async def help_():
 
 @update_nc.handle()
 async def handle_update_nc(bot: Bot, event: Event, args: Message = CommandArg()):
-    global bot_id
     specific_version = args.extract_plain_text().strip()
     try:
         version_info = await bot.get_version_info()
-        try:
-            if specific_version:
-                asset, latest_version, current_version = await get_latest_release(
-                    napcat_mode, version_info, specific_version=f"v{specific_version}")
-            else:
-                asset, latest_version, current_version = await get_latest_release(napcat_mode, version_info)
-        except ValueError as e:            
-            await update_nc.finish(str(e)) 
+        latest_version = f"v{specific_version}" if specific_version else None
+        asset, latest_version, current_version = await get_latest_release(napcat_mode, version_info, specific_version=latest_version)
+
         if latest_version == current_version:
             await update_nc.finish(f"已经是最新版了~\n当前版本:{current_version}")
-        
+
         if platform.system().lower() == 'windows':
             odoo = await ciallo(latest_version)
             if not odoo:
-                await update_nc.finish(f"警告:NTQQ版本与该版本NapCat不兼容。\n已取消本次更新")
+                await update_nc.finish(f"警告: NTQQ版本与该版本NapCat不兼容。\n已取消本次更新")
 
         await update_nc.send("正在更新，请稍候")
         download_url = asset["browser_download_url"]
         file_path = await download_file(download_url, asset['name'])
-        try:
-            await update_nc.send("正在执行文件替换")
-            if latest_version.startswith("v1"):
-                await unzip_v1(file_path, base_path, topfolder)
-            elif any(latest_version.startswith(prefix) for prefix in ("v2", "v3")):
-                
-                await unzip_v2(file_path, base_path, topfolder)
-        except Exception as e:
-            await update_nc.finish(f"文件替换过程出现错误:{e}")
+
+        await update_nc.send("正在执行文件替换")
+        if latest_version.startswith("v1"):
+            await unzip_v1(file_path, base_path, topfolder)
+        #elif latest_version.startswith(("v2", "v3")):
+        else:
+            await unzip_v2(file_path, base_path, topfolder)
 
         await handle_restart(bot, event)
-
+        
     except FinishedException:
         pass
+    except ValueError as e:
+        await update_nc.finish(str(e))
     except Exception as e:
         await update_nc.send(f"发生错误：{e}")
+
 
 @restart.handle()
 async def handle_restart(bot: Bot, event: Event):
