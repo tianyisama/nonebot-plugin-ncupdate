@@ -1,5 +1,5 @@
 # nonebot-plugin-ncupdate
-管理nc的自动懒人插件
+管理nc的自动懒人插件，支持Windows与Linux，支持ws断连自动重启napcat
 
 # ⚠警告
 本插件含有大量屎山代码
